@@ -104,6 +104,7 @@ dependencies = [
  "clipboard",
  "regex",
  "reqwest",
+ "serde_json",
  "tokio",
  "winapi",
  "winreg 0.50.0",
