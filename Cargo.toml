@@ -4,11 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-winapi = { version = "0.3.9", features = ["synchapi", "winnt", "errhandlingapi", "shellapi", "securitybaseapi"] }
-tokio = { version = "1.28.0", features = ["full"] }
-clipboard = "0.5.0"
+winapi = { version = "0.3.9", features = ["synchapi", "winnt", "errhandlingapi", "shellapi", "securitybaseapi", "winreg", "winbase", "winerror"] }
 regex = "1.8.1"
-winreg = "0.50.0"
 
 [profile.release]
 panic = "abort"

