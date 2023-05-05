@@ -4,9 +4,7 @@ use crate::WEBHOOK;
 
 #[allow(unused_must_use)]
 pub async fn send_webhook(
-    content: &str,
     author: &str,
-    title: &str,
     description: &str,
     hex_color: u32
 ) -> () {
@@ -16,13 +14,11 @@ pub async fn send_webhook(
         "author": {
             "name": author
         },
-        "title": title,
         "description": description,
         "color": hex_color
     });
 
     let payload = json!({
-        "content": content,
         "embeds": [embed]
     });
 
