@@ -3,11 +3,11 @@ extern crate winapi;
 use std::io::Error;
 use std::iter::once;
 use std::{ffi::OsStr, os::windows::prelude::OsStrExt, ptr::null_mut};
-use winapi::shared::minwindef::{HKEY, BYTE, DWORD};
-use winapi::um::winnt::{REG_SZ, KEY_READ, KEY_WRITE};
-use winapi::um::winreg::{RegSetValueExW, RegOpenKeyExW};
+use winapi::shared::minwindef::{BYTE, DWORD, HKEY};
+use winapi::um::winnt::{KEY_READ, KEY_WRITE, REG_SZ};
+use winapi::um::winreg::{RegOpenKeyExW, RegSetValueExW};
 use winapi::{
-    shared::{winerror::ERROR_SUCCESS},
+    shared::winerror::ERROR_SUCCESS,
     um::{
         winnt::KEY_ALL_ACCESS,
         winreg::{RegCreateKeyExW, HKEY_CURRENT_USER},
